@@ -1,0 +1,18 @@
+
+ Center,Treatment,Much_Better,Better,Unchanged/Worse 
+ 1,Drug,13,7,6
+ 1,Placebo,1,1,10 
+ 2,Drug,2,5,10 
+ 2,Placebo,2,2,1  
+ 3,Drug,11,23,7  
+ 3,Placebo,2,8,2  
+ 4,Drug,7,11,8  
+ 4,Placebo,0,3,2  
+ 5,Drug,15,3,5  
+ 5,Placebo,1,1,5  
+ 6,Drug,13,5,5  
+ 6,Placebo,4,0,1  
+ 7,Drug,7,4,13 
+ 7,Placebo,1,1,11 
+ 8,Drug,15,9,2  
+ 8,Placebo,3,2,2  

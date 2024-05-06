@@ -1,0 +1,40 @@
+# Read the data
+```{r}
+data <- read.csv("data.csv")
+# Add a new column 'Much_Better.Better' which is the sum of 'Much_Better' and 'Better'
+data$Much_Better.Better <- data$Much_Better + data$Better
+data <- data[c(1, 2, 5, 6)]
+print(data)
+
+xtab_data <- data.frame(
+  Center = rep(data$Center, times = 2),
+  Treatment = rep(data$Treatment, times = 2),
+  Outcome = rep(c("MB", "UW"), each = nrow(data)),
+  Count = c(data$Much_Better.Better, data$Unchanged.Worse)
+)
+print(xtab_data)
+
+# Mosaic plot with diff centers
+library(vcd)
+xtab <- xtabs(Count ~ Center + Treatment + Outcome, data = xtab_data)
+mosaic(xtab, main = "Mosaic Plot of Treatment Outcomes", direction = c("v","h","v"), highlighting = "Outcome", highlighting_fill = c("lightblue", "pink"))
+```
+# cross tabs
+```{r}
+# Cross tab data without center
+xtab_data_without_center <- data.frame(
+  Treatment = rep(data$Treatment, times = 2),
+  Outcome = rep(c("MB", "UW"), each = nrow(data)),
+  Count = c(data$Much_Better.Better, data$Unchanged.Worse)
+)
+# print(cross_tab_data)
+
+# Now use xtabs to create the cross-tabulation with 'Treatment' as rows and 'variable' (Much_Better.Better, Unchanged.Worse) as columns
+xtab_without_center <- xtabs(Count ~ Treatment + Outcome, data = xtab_data_without_center)
+print(xtab_without_center)
+
+# Plot the mosaic plot
+mosaic(xtab_without_center, main = "Mosaic Plot of Treatment Outcomes", highlighting = "Outcome", highlighting_fill = c("lightblue", "pink"))
+```
+
+
