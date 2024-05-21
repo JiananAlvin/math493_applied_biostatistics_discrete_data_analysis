@@ -9,17 +9,19 @@ print(data)
 xtab_data <- data.frame(
   Center = rep(data$Center, times = 2),
   Treatment = rep(data$Treatment, times = 2),
-  Outcome = rep(c("MB", "UW"), each = nrow(data)),
+  Outcome = rep(c("Improved", "Unchanged/Worse"), each = nrow(data)),
   Count = c(data$Much_Better.Better, data$Unchanged.Worse)
 )
 print(xtab_data)
+write.csv(xtab_data, "xtab_data.csv", row.names = FALSE)
+
 
 # Mosaic plot with diff centers
 library(vcd)
 xtab <- xtabs(Count ~ Center + Treatment + Outcome, data = xtab_data)
 mosaic(xtab, main = "Mosaic Plot of Treatment Outcomes", direction = c("v","h","v"), highlighting = "Outcome", highlighting_fill = c("lightblue", "pink"))
 ```
-# cross tabs
+# Idependence test
 ```{r}
 # Cross tab data without center
 xtab_data_without_center <- data.frame(
@@ -27,14 +29,90 @@ xtab_data_without_center <- data.frame(
   Outcome = rep(c("MB", "UW"), each = nrow(data)),
   Count = c(data$Much_Better.Better, data$Unchanged.Worse)
 )
-# print(cross_tab_data)
 
-# Now use xtabs to create the cross-tabulation with 'Treatment' as rows and 'variable' (Much_Better.Better, Unchanged.Worse) as columns
-xtab_without_center <- xtabs(Count ~ Treatment + Outcome, data = xtab_data_without_center)
-print(xtab_without_center)
+# Create a contingency table
+contingency_tab <- xtabs(Count ~ Treatment + Outcome, data=xtab_data_without_center)
+print(contingency_tab)
 
 # Plot the mosaic plot
-mosaic(xtab_without_center, main = "Mosaic Plot of Treatment Outcomes", highlighting = "Outcome", highlighting_fill = c("lightblue", "pink"))
+library("mosaic")
+mosaic(contingency_tab, main = "Mosaic Plot of Treatment Outcomes", highlighting = "Outcome", highlighting_fill = c("lightblue", "pink"))
+
+# Perform chi-squared test
+chi_test <- chisq.test(contingency_tab)
+print(chi_test)
+
+# Calculate expected frequencies and marginal sums
+expected_freqs <- chi_test$expected
+row_sums <- rowSums(expected_freqs)
+col_sums <- colSums(expected_freqs)
+grand_total <- sum(expected_freqs)
+
+# Append row sums and column sums
+expected_freqs <- rbind(expected_freqs, Total = col_sums)
+expected_freqs <- cbind(expected_freqs, Total = c(row_sums, grand_total))
+
+# Print results
+print(expected_freqs)
+
+# Calculate the critical value for a chi-squared distribution with df = 1 at alpha = 0.05
+critical_value <- qchisq(0.95, df = 1)  # 0.95 because it's the upper tail for a 0.05 significance level
+print(critical_value)
+```
+# Mantel-Haenszel Test
+```{r}
+# Null Hypothesis (H0): States that the odds ratios (effectiveness of treatment) are the same across all centers, implying that the effect of the treatment does not vary by center.
+
+# Alternative Hypothesis (Ha): Claims that the odds ratios differ among centers, which would mean the treatment effectiveness is inconsistent across different centers.
+
+library(epitools)
+
+# Create a list of contingency tables for each center
+tables_list <- lapply(split(data, data$Center), function(df) {
+  matrix(
+    c(
+      df$Much_Better.Better[1], df$Much_Better.Better[2],
+      df$Unchanged.Worse[1], df$Unchanged.Worse[2]
+    ),
+    nrow = 2,
+    dimnames = list(c("Drug", "Placebo"), c("Much_Better.Better", "Unchanged.Worse"))
+  )
+})
+print(tables[[1]])
+
+# Convert list to an array
+if(length(tables_list) > 0) {
+  tables_array <- array(unlist(tables_list), dim = c(2, 2, length(tables_list)))
+} else {
+  stop("No tables available to analyze.")
+}
+print(dim(tables_array))
+
+# Use the mantelhaenszel function to calculate pooled odds ratio and test for homogeneity
+mh_results <- mantelhaen.test(tables_array)
+print(mh_results)
+
+# p < 0.01, very strong evidence against the null hypothesis.
+
+```
+# Wolf Test
+```{r}
+library(epitools)
+
+# odds ratio
+logos <- oddsratio(tables_array, log=FALSE)
+print(logos)
+
+# log odds ratio
+os <- oddsratio(tables_array)
+print(os)
+
+woolf_test(tables_array)
+
+# Decision: Since the p-value is slightly above 0.05, you would typically not reject the null hypothesis at the 5% significance level. This suggests that there is not enough evidence to say definitively that the odds ratios are different across the centers. However, given how close the p-value is to 0.05, it implies that there may be some variation in how the treatment performs across different centers, but this variation is not strong enough to be statistically significant at the conventional level.
+
+# Implications: The results suggest that while some differences in treatment effectiveness across centers might exist, these differences are not statistically robust at the 5% level. This could mean that any observed variations in treatment effectiveness across centers could be due to chance or might require a larger sample size or additional data to definitively detect.
+
 ```
 
 
